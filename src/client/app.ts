@@ -155,7 +155,7 @@ async function refreshRate(): Promise<void> {
 /* ---------- Presets：localStorage，无账号 ---------- */
 
 const BUILTIN_PRESETS: Record<string, Partial<FieldValues>> = {
-  默认: {},
+  默认: { serviceRatePct: '8', minimumServiceFee: '10', platformFeeRatePct: '1', exchangeMarkupPct: '1.5', roundingMode: 'ceil1' },
   闲鱼普通代购: { serviceRatePct: '5', minimumServiceFee: '10', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil1' },
   熟人代购: { serviceRatePct: '0', minimumServiceFee: '0', platformFeeRatePct: '0', exchangeMarkupPct: '0', roundingMode: 'ceil1' },
   高价商品: { serviceRatePct: '8', minimumServiceFee: '30', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil10' },
