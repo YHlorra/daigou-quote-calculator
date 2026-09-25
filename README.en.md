@@ -19,7 +19,7 @@ A quoting tool for overseas daigou / personal shoppers. It is not a currency con
 
 rate snapshot → safety buffer → purchase cost (incl. domestic shipping and extras) → service fee (rate vs. minimum, whichever is higher) → platform-fee gross-up → suggested quote (with rounding) → expected profit.
 
-A pure-static PWA: no backend, no accounts. All math runs locally in your browser, and it works offline once added to your home screen. 11 currencies supported (JPY / USD / EUR / GBP / KRW / HKD / TWD / SGD / AUD / CAD / CNY), settlement currency is not hardcoded.
+A pure-static PWA: no backend, no accounts. All math runs locally in your browser, and it works offline once added to your home screen. 12 currencies supported (JPY / USD / EUR / GBP / KRW / HKD / TWD / SGD / AUD / CAD / PHP / CNY), settlement currency is not hardcoded.
 
 ## Why I built this
 
@@ -82,7 +82,7 @@ npm test    # pricing unit tests: fee floor, gross-up, rounding modes, float-pre
 
 ### About the rate source
 
-Rates come from **er-api** (free snapshot updated once a day) and **frankfurter** (fallback, no TWD). The UI shows the source and timestamp honestly and never claims "real-time". Your actual settlement rate depends on your payment channel — keep a 1–3% buffer as a hedge.
+Rates come from **er-api** (free snapshot updated once a day) and **frankfurter** (fallback, no TWD / PHP). The UI shows the source and timestamp honestly and never claims "real-time". Your actual settlement rate depends on your payment channel — keep a 1–3% buffer as a hedge.
 
 ## About the author
 

@@ -6,7 +6,7 @@ import type { QuoteInput, QuoteResult } from './pricing/types';
  */
 const CURRENCY_SYMBOLS: Record<string, string> = {
   CNY: '¥', USD: '$', EUR: '€', GBP: '£', JPY: 'JP¥', KRW: '₩',
-  HKD: 'HK$', TWD: 'NT$', SGD: 'S$', AUD: 'A$', CAD: 'C$',
+  HKD: 'HK$', TWD: 'NT$', SGD: 'S$', AUD: 'A$', CAD: 'C$', PHP: '₱',
 };
 
 export function fmtMoney(value: number, currency: string): string {

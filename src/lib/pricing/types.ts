@@ -1,6 +1,6 @@
 /** 支持的币种。v1 结算货币默认 CNY，但结构上不写死 —— settlementCurrency 是显式参数。 */
 export const SUPPORTED_CURRENCIES = [
-  'JPY', 'USD', 'EUR', 'GBP', 'KRW', 'HKD', 'TWD', 'SGD', 'AUD', 'CAD', 'CNY',
+  'JPY', 'USD', 'EUR', 'GBP', 'KRW', 'HKD', 'TWD', 'SGD', 'AUD', 'CAD', 'PHP', 'CNY',
 ] as const;
 
 export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number];
