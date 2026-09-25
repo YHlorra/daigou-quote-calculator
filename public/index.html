@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>跨境代购报价计算器 · Proxy Calculator</title>
+  <meta name="description" content="海外代购报价计算器：输入外币商品价格，自动换算汇率快照、采购成本、服务费、平台手续费，一键算出建议报价与预计利润。支持 JPY/USD/EUR 等 11 种货币，可离线使用。">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="报价计算器">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<main class="app">
+  <header class="app-header">
+    <h1>跨境代购报价计算器</h1>
+    <div class="preset-bar">
+      <select id="preset-select" aria-label="报价方案"></select>
+      <button type="button" id="preset-save" class="ghost">保存方案</button>
+      <button type="button" id="preset-delete" class="ghost">删除</button>
+    </div>
+  </header>
+
+  <form id="calc-form">
+    <section class="card">
+      <div class="field-row">
+        <div class="field">
+          <label for="fromCurrency">商品币种</label>
+          <select id="fromCurrency" name="fromCurrency">
+            <option value="JPY" selected>JPY 日元</option>
+            <option value="USD">USD 美元</option>
+            <option value="EUR">EUR 欧元</option>
+            <option value="GBP">GBP 英镑</option>
+            <option value="KRW">KRW 韩元</option>
+            <option value="HKD">HKD 港币</option>
+            <option value="TWD">TWD 新台币</option>
+            <option value="SGD">SGD 新加坡元</option>
+            <option value="AUD">AUD 澳元</option>
+            <option value="CAD">CAD 加元</option>
+            <option value="CNY">CNY 人民币</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="foreignPrice">商品价格</label>
+          <input id="foreignPrice" name="foreignPrice" type="number" inputmode="decimal" min="0" step="any" placeholder="1480" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="exchangeRate">汇率快照（1 <span data-currency-label>JPY</span> = ? CNY）</label>
+        <input id="exchangeRate" name="exchangeRate" type="number" inputmode="decimal" min="0" step="any" placeholder="0.0432" required>
+        <div class="rate-meta" id="rate-meta">来源 er-api，每日更新一次；打开页面 / 切换币种自动获取，也可手动修改</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="field-row">
+        <div class="field">
+          <label for="domesticShipping">境内运费（<span data-currency-label>JPY</span>）</label>
+          <input id="domesticShipping" name="domesticShipping" type="number" inputmode="decimal" min="0" step="any" value="0">
+        </div>
+        <div class="field">
+          <label for="additionalCost">其他成本（CNY）</label>
+          <input id="additionalCost" name="additionalCost" type="number" inputmode="decimal" min="0" step="any" value="0">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="field-row">
+        <div class="field">
+          <label for="serviceRatePct">服务费率（%）</label>
+          <input id="serviceRatePct" name="serviceRatePct" type="number" inputmode="decimal" min="0" max="100" step="any" value="5">
+        </div>
+        <div class="field">
+          <label for="minimumServiceFee">最低服务费（CNY）</label>
+          <input id="minimumServiceFee" name="minimumServiceFee" type="number" inputmode="decimal" min="0" step="any" value="10">
+          <div class="field-hint">费率算出不足此金额时按此金额收取（两者取高，不叠加）</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="platformFeeRatePct">平台手续费（%）</label>
+          <input id="platformFeeRatePct" name="platformFeeRatePct" type="number" inputmode="decimal" min="0" max="90" step="any" value="5">
+        </div>
+        <div class="field">
+          <label for="exchangeMarkupPct">汇率缓冲（%）</label>
+          <input id="exchangeMarkupPct" name="exchangeMarkupPct" type="number" inputmode="decimal" min="0" max="50" step="any" value="1.5">
+        </div>
+      </div>
+      <div class="field">
+        <label for="roundingMode">报价取整</label>
+        <select id="roundingMode" name="roundingMode">
+          <option value="ceil1" selected>向上取整到 ¥1</option>
+          <option value="none">不取整</option>
+          <option value="ceil5">向上取整到 ¥5</option>
+          <option value="ceil10">向上取整到 ¥10</option>
+        </select>
+      </div>
+    </section>
+
+    <input type="hidden" name="settlementCurrency" value="CNY">
+    <button type="submit" class="primary calc-btn">计算报价</button>
+  </form>
+
+  <section id="result-panel" class="result-panel" aria-live="polite"></section>
+
+  <footer class="app-footer">
+    <p>报价 =（实际采购成本 + 服务费）÷（1 − 平台手续费率），向上取整后即建议报价。利润按实收金额扣除手续费后计算。</p>
+  </footer>
+</main>
+</body>
+</html>

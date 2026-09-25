@@ -1,0 +1,25 @@
+{
+  "name": "proxy-calculator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "跨境代购报价计算器 — 纯静态 PWA，GitHub Pages 就绪",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "esbuild src/client/app.ts --bundle --format=iife --outfile=public/app.js --servedir=public --serve=127.0.0.1:8790",
+    "build": "npm run build:client && npm run typecheck && npm test",
+    "build:client": "esbuild src/client/app.ts --bundle --format=iife --outfile=public/app.js",
+    "icons": "node scripts/generate-icons.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx src/lib/pricing/tests/calculate.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "esbuild": "^0.25.0",
+    "sharp": "^0.35.4",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8"
+  }
+}
