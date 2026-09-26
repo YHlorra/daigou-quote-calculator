@@ -17,7 +17,7 @@
 
 A quoting tool for overseas daigou / personal shoppers. It is not a currency converter — conversion is only step one. It walks the entire quote chain:
 
-rate snapshot → safety buffer → purchase cost (incl. domestic shipping and extras) → service fee (rate vs. minimum, whichever is higher) → platform-fee gross-up → suggested quote (with rounding) → expected profit.
+rate snapshot → safety buffer → purchase cost (incl. domestic shipping and extras) → (advanced mode: itemized payment-chain costs) → service fee (rate vs. minimum, whichever is higher) → platform-fee gross-up → suggested quote (with rounding) → expected profit.
 
 A pure-static PWA: no backend, no accounts. All math runs locally in your browser, and it works offline once added to your home screen. 12 currencies supported (JPY / USD / EUR / GBP / KRW / HKD / TWD / SGD / AUD / CAD / PHP / CNY), settlement currency is not hardcoded.
 
@@ -45,6 +45,7 @@ npm run dev        # http://127.0.0.1:8790
 
 - ✅ **Live calculation** — change any input and the quote panel refreshes within 300ms, no button press
 - ✅ **Complete fee model** — exchange buffer, minimum service fee (max of the two, never additive), platform-fee gross-up (÷(1−rate)), four rounding modes
+- ✅ **Ordinary / advanced modes** — keep ordinary quotes simple; advanced mode adds custom payment-chain cost steps with per-step rates, using the higher of observed loss and rate estimate for each step
 - ✅ **Fee presets** — built-in Xianyu / friend price / high-ticket / scalping presets, plus custom ones persisted in localStorage
 - ✅ **Rate snapshots** — er-api primary + frankfurter fallback, updated daily, source and timestamp shown honestly (never claimed as "real-time"); auto-aligned on page open and currency switch, manual overrides never clobbered
 - ✅ **Offline** — full calculator without network, snapshot falls back to the last cached value
@@ -54,7 +55,9 @@ npm run dev        # http://127.0.0.1:8790
 
 ```
 effective rate = rate × (1 + buffer)
-purchase cost  = price×effective rate + shipping×effective rate + extras
+base cost      = price×effective rate + shipping×effective rate + extras
+advanced fees  = sum(max(pre-step cumulative cost×step rate, observed step loss))
+purchase cost  = base cost + advanced fees
 service fee    = max(purchase cost × service rate, minimum fee)   ← higher of the two, never additive
 quote          = (purchase cost + service fee) ÷ (1 − platform rate) ← gross-up: platform skims the final price
 profit         = quote − purchase cost − quote×platform rate

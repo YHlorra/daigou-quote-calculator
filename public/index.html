@@ -59,6 +59,29 @@
       </div>
     </section>
 
+    <section class="card mode-card">
+      <div class="field">
+        <label for="pricingMode">计算模式</label>
+        <select id="pricingMode" name="pricingMode">
+          <option value="ordinary" selected>普通模式</option>
+          <option value="advanced">高级模式</option>
+        </select>
+        <div class="field-hint">高级模式可把多个支付、提现、充值等成本环节纳入报价。</div>
+      </div>
+    </section>
+
+    <section class="card advanced-card" id="advanced-card" hidden>
+      <div class="section-heading">
+        <div>
+          <h2>资金链路费用</h2>
+          <p>逐项按累计成本估算；同一环节的实额与费率估算取高，不重复计算。</p>
+        </div>
+        <button type="button" class="ghost" id="add-advanced-fee">添加环节</button>
+      </div>
+      <div id="advanced-fees-list"></div>
+      <div class="field-hint">平台从最终成交金额扣除的手续费仍使用下方“平台手续费”，按原公式倒推报价。</div>
+    </section>
+
     <section class="card">
       <div class="field-row">
         <div class="field">
@@ -105,6 +128,7 @@
       </div>
     </section>
 
+    <input type="hidden" name="advancedFees" id="advancedFees" value="[]">
     <input type="hidden" name="settlementCurrency" value="CNY">
     <button type="submit" class="primary calc-btn">计算报价</button>
   </form>
@@ -112,7 +136,7 @@
   <section id="result-panel" class="result-panel" aria-live="polite"></section>
 
   <footer class="app-footer">
-    <p>报价 =（实际采购成本 + 服务费）÷（1 − 平台手续费率），向上取整后即建议报价。利润按实收金额扣除手续费后计算。</p>
+    <p>报价 =（计入所选模式费用后的采购成本 + 服务费）÷（1 − 平台手续费率），向上取整后即建议报价。利润按实收金额扣除手续费后计算。</p>
   </footer>
 </main>
 </body>

@@ -1,4 +1,4 @@
-import type { QuoteInput, QuoteResult } from './types';
+import type { AdvancedFeeResult, QuoteInput, QuoteResult } from './types';
 import { roundQuote } from './rounding';
 
 /**
@@ -18,7 +18,28 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
 
   const productCost = input.foreignPrice * effectiveExchangeRate;
   const domesticShippingCost = input.domesticShipping * effectiveExchangeRate;
-  const purchaseCost = productCost + domesticShippingCost + input.additionalCost;
+  const basePurchaseCost = productCost + domesticShippingCost + input.additionalCost;
+  let runningCost = basePurchaseCost;
+  const advancedFeeBreakdown: AdvancedFeeResult[] = [];
+  for (const step of input.advancedFees ?? []) {
+    const rate = Number.isFinite(step.rate) ? Math.min(Math.max(step.rate, 0), 0.99) : 0;
+    const actualAmount = Number.isFinite(step.actualAmount)
+      ? Math.max(step.actualAmount ?? 0, 0)
+      : null;
+    const rateAmount = runningCost * rate;
+    const amount = Math.max(rateAmount, actualAmount ?? 0);
+    advancedFeeBreakdown.push({
+      name: step.name.trim() || '自定义费用',
+      baseAmount: runningCost,
+      rate,
+      rateAmount,
+      actualAmount,
+      amount,
+    });
+    runningCost += amount;
+  }
+  const advancedFeeTotal = runningCost - basePurchaseCost;
+  const purchaseCost = runningCost;
 
   const serviceFee = Math.max(purchaseCost * input.serviceRate, input.minimumServiceFee);
 
@@ -34,6 +55,9 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     marketExchangeValue,
     productCost,
     domesticShippingCost,
+    basePurchaseCost,
+    advancedFeeBreakdown,
+    advancedFeeTotal,
     purchaseCost,
     serviceFee,
     subtotal,

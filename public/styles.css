@@ -98,6 +98,37 @@ input:focus, select:focus {
   margin-top: 5px;
 }
 
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.section-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.advanced-fee-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.advanced-fee-row .field-row { align-items: flex-start; }
+.advanced-fee-row .field { flex: 1; min-width: 0; }
+.advanced-fee-row .fee-name-field { flex: 1; }
+.advanced-fee-row .remove-fee-btn { margin-top: 22px; }
+.advanced-fee-row .field-hint { margin-bottom: 4px; }
+
 button {
   font-size: 15px;
   border-radius: 9px;
@@ -164,6 +195,13 @@ button.ghost {
 
 .quote-rows dt { color: var(--muted); }
 .quote-rows dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.quote-rows .cost-subtotal {
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
+.quote-rows .cost-total { font-weight: 650; }
 
 .quote-final {
   display: flex;

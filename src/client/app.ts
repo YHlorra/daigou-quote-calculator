@@ -1,6 +1,7 @@
 import { calculateQuote } from '../lib/pricing/calculate';
 import {
   SUPPORTED_CURRENCIES,
+  type AdvancedFeeStep,
   type CurrencyCode,
   type QuoteInput,
   type RoundingMode,
@@ -36,12 +37,14 @@ interface FieldValues {
   platformFeeRatePct: string;
   exchangeMarkupPct: string;
   roundingMode: string;
+  pricingMode: string;
+  advancedFees: string;
 }
 
 const FIELD_IDS = Object.keys({
   foreignPrice: 1, exchangeRate: 1, domesticShipping: 1, additionalCost: 1,
   serviceRatePct: 1, minimumServiceFee: 1, platformFeeRatePct: 1,
-  exchangeMarkupPct: 1, roundingMode: 1,
+  exchangeMarkupPct: 1, roundingMode: 1, pricingMode: 1, advancedFees: 1,
 }) as (keyof FieldValues)[];
 
 interface StoredState {
@@ -90,6 +93,7 @@ function collectInput(): QuoteInput | null {
   if (!(foreignPrice > 0) || !(exchangeRate > 0)) return null;
   const roundingMode = fields.roundingMode as RoundingMode;
   const pct = (v: string) => Math.min(Math.max(Number(v) || 0, 0), 100) / 100;
+  const advancedFees = fields.pricingMode === 'advanced' ? parseAdvancedFees(fields.advancedFees) : [];
   return {
     foreignPrice,
     fromCurrency: $<HTMLSelectElement>('#fromCurrency').value as CurrencyCode,
@@ -102,7 +106,25 @@ function collectInput(): QuoteInput | null {
     platformFeeRate: Math.min(pct(fields.platformFeeRatePct), 0.9),
     roundingMode: ['none', 'ceil1', 'ceil5', 'ceil10'].includes(roundingMode) ? roundingMode : 'ceil1',
     settlementCurrency: 'CNY',
+    ...(advancedFees.length ? { advancedFees } : {}),
   };
+}
+
+function parseAdvancedFees(raw: string): AdvancedFeeStep[] {
+  try {
+    const value: unknown = JSON.parse(raw || '[]');
+    if (!Array.isArray(value)) return [];
+    return value.filter((item): item is AdvancedFeeStep => !!item && typeof item === 'object')
+      .map((item) => ({
+        name: String(item.name ?? '').trim() || '自定义费用',
+        rate: Math.min(Math.max(Number(item.rate) || 0, 0), 0.99),
+        ...(item.actualAmount === null || item.actualAmount === undefined
+          ? {}
+          : { actualAmount: Math.max(Number(item.actualAmount) || 0, 0) }),
+      }));
+  } catch {
+    return [];
+  }
 }
 
 /* ---------- 实时计算：输入即本地算（同一份公式模块，无网络往返，离线可用） ---------- */
@@ -155,14 +177,100 @@ async function refreshRate(): Promise<void> {
 /* ---------- Presets：localStorage，无账号 ---------- */
 
 const BUILTIN_PRESETS: Record<string, Partial<FieldValues>> = {
-  默认: { serviceRatePct: '8', minimumServiceFee: '10', platformFeeRatePct: '1', exchangeMarkupPct: '1.5', roundingMode: 'ceil1' },
-  闲鱼普通代购: { serviceRatePct: '5', minimumServiceFee: '10', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil1' },
-  熟人代购: { serviceRatePct: '0', minimumServiceFee: '0', platformFeeRatePct: '0', exchangeMarkupPct: '0', roundingMode: 'ceil1' },
-  高价商品: { serviceRatePct: '8', minimumServiceFee: '30', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil10' },
-  抢购商品: { serviceRatePct: '10', minimumServiceFee: '20', platformFeeRatePct: '6', exchangeMarkupPct: '3', roundingMode: 'ceil5' },
+  默认: { serviceRatePct: '8', minimumServiceFee: '10', platformFeeRatePct: '1', exchangeMarkupPct: '1.5', roundingMode: 'ceil1', pricingMode: 'ordinary', advancedFees: '[]' },
+  闲鱼普通代购: { serviceRatePct: '5', minimumServiceFee: '10', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil1', pricingMode: 'ordinary', advancedFees: '[]' },
+  熟人代购: { serviceRatePct: '0', minimumServiceFee: '0', platformFeeRatePct: '0', exchangeMarkupPct: '0', roundingMode: 'ceil1', pricingMode: 'ordinary', advancedFees: '[]' },
+  高价商品: { serviceRatePct: '8', minimumServiceFee: '30', platformFeeRatePct: '5', exchangeMarkupPct: '1.5', roundingMode: 'ceil10', pricingMode: 'ordinary', advancedFees: '[]' },
+  抢购商品: { serviceRatePct: '10', minimumServiceFee: '20', platformFeeRatePct: '6', exchangeMarkupPct: '3', roundingMode: 'ceil5', pricingMode: 'ordinary', advancedFees: '[]' },
 };
 
 const presetSelect = $<HTMLSelectElement>('#preset-select');
+
+const advancedFeesList = $<HTMLElement>('#advanced-fees-list');
+const advancedFeesField = $<HTMLInputElement>('#advancedFees');
+const advancedCard = $<HTMLElement>('#advanced-card');
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char] ?? char);
+}
+
+function renderAdvancedFeeRows(fees: AdvancedFeeStep[]): void {
+  advancedFeesList.innerHTML = fees.map((fee, index) => `
+    <div class="advanced-fee-row" data-fee-row>
+      <div class="field-row">
+        <div class="field fee-name-field">
+          <label>环节名称</label>
+          <input type="text" data-fee-name value="${escapeHtml(fee.name)}" maxlength="30" placeholder="如：支付手续费">
+        </div>
+        <button type="button" class="ghost remove-fee-btn" data-remove-fee aria-label="删除第 ${index + 1} 个费用环节">删除</button>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>自定义费率（%）</label>
+          <input type="number" inputmode="decimal" data-fee-rate min="0" max="99" step="any" value="${(fee.rate * 100).toString()}">
+        </div>
+        <div class="field">
+          <label>实际损耗（CNY，可选）</label>
+          <input type="number" inputmode="decimal" data-fee-actual min="0" step="any" value="${fee.actualAmount ?? ''}" placeholder="留空则按费率估算">
+        </div>
+      </div>
+      <div class="field-hint">按本环节开始前的累计成本 × 费率估算；填写实额时与费率估算取高，不叠加。</div>
+    </div>`).join('');
+  advancedFeesField.value = JSON.stringify(fees);
+}
+
+function readAdvancedFeeRows(): AdvancedFeeStep[] {
+  return [...advancedFeesList.querySelectorAll<HTMLElement>('[data-fee-row]')].map((row) => {
+    const ratePct = Number(row.querySelector<HTMLInputElement>('[data-fee-rate]')?.value) || 0;
+    const actualText = row.querySelector<HTMLInputElement>('[data-fee-actual]')?.value ?? '';
+    return {
+      name: row.querySelector<HTMLInputElement>('[data-fee-name]')?.value.trim() || '自定义费用',
+      rate: Math.min(Math.max(ratePct, 0), 99) / 100,
+      ...(actualText.trim() === '' ? {} : { actualAmount: Math.max(Number(actualText) || 0, 0) }),
+    };
+  });
+}
+
+function syncAdvancedMode(): void {
+  advancedCard.hidden = $<HTMLSelectElement>('#pricingMode').value !== 'advanced';
+}
+
+function syncAdvancedFees(): void {
+  advancedFeesField.value = JSON.stringify(readAdvancedFeeRows());
+}
+
+advancedFeesList.addEventListener('input', () => {
+  syncAdvancedFees();
+  writeState({ fields: readFields() });
+  window.clearTimeout(calcTimer);
+  calcTimer = window.setTimeout(renderLocalQuote, 300);
+});
+
+advancedFeesList.addEventListener('click', (event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('[data-remove-fee]')) return;
+  const row = target.closest('[data-fee-row]');
+  row?.remove();
+  syncAdvancedFees();
+  writeState({ fields: readFields() });
+  renderLocalQuote();
+});
+
+$<HTMLButtonElement>('#add-advanced-fee').addEventListener('click', () => {
+  const fees = readAdvancedFeeRows();
+  fees.push({ name: `费用环节 ${fees.length + 1}`, rate: 0 });
+  renderAdvancedFeeRows(fees);
+  writeState({ fields: readFields() });
+  renderLocalQuote();
+});
+
+$<HTMLSelectElement>('#pricingMode').addEventListener('change', () => {
+  syncAdvancedMode();
+  writeState({ fields: readFields() });
+  renderLocalQuote();
+});
 
 function renderPresetOptions(selected?: string): void {
   const custom = readState().presets;
@@ -180,7 +288,10 @@ presetSelect.addEventListener('change', () => {
   const name = presetSelect.value;
   const fields = BUILTIN_PRESETS[name] ?? readState().presets[name];
   if (fields) {
-    applyFields(fields);
+    // 旧版自定义方案没有模式/高级费用字段，按普通模式恢复，避免沿用当前费用行。
+    applyFields({ pricingMode: 'ordinary', advancedFees: '[]', ...fields });
+    renderAdvancedFeeRows(parseAdvancedFees(readFields().advancedFees));
+    syncAdvancedMode();
     writeState({ fields: { ...readFields() }, presetName: name });
     renderLocalQuote();
   }
@@ -259,6 +370,8 @@ $<HTMLSelectElement>('#fromCurrency').addEventListener('change', () => {
 function init(): void {
   const state = readState();
   applyFields(state.fields);
+  renderAdvancedFeeRows(parseAdvancedFees(readFields().advancedFees));
+  syncAdvancedMode();
   if (SUPPORTED_CURRENCIES.includes(state.fromCurrency)) {
     $<HTMLSelectElement>('#fromCurrency').value = state.fromCurrency;
   }
